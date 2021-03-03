@@ -15,14 +15,13 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     //Static configs
     let scnConfig = ARWorldTrackingConfiguration()
     var listOfObjects = [
-        CellInfo(name: "Hello", backColor: UIColor.red, node: SCNNode()),
-        CellInfo(name: "World", backColor: UIColor.blue, node: SCNNode()),
-        CellInfo(name: "This", backColor: UIColor.yellow, node: SCNNode()),
-        CellInfo(name: "is", backColor: UIColor.green, node: SCNNode()),
-        CellInfo(name: "a", backColor: UIColor.purple, node: SCNNode()),
-        CellInfo(name: "collection", backColor: UIColor.white, node: SCNNode()),
-        CellInfo(name: "view", backColor: UIColor.orange, node: SCNNode())
+        CellInfo(name: "balon", backColor: UIColor.blue),
+        CellInfo(name: "medusa", backColor: UIColor.yellow),
+        CellInfo(name: "mesa", backColor: UIColor.green),
+        CellInfo(name: "taza", backColor: UIColor.purple),
+        CellInfo(name: "vasija", backColor: UIColor.white)
     ]
+    var selectedItem:CellInfo = CellInfo()
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -36,8 +35,19 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         ]
         scnConfig.planeDetection = .horizontal
         sceneView.session.run(scnConfig)
+        //let tap:UIGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(hitTestResult:)))
         
     }
+    
+    func addItem(hitTestResult: ARHitTestResult) -> Void {
+        print("You Tapped")
+        let transform = hitTestResult.worldTransform
+        let thirdColumn = transform.columns.3
+        let node = selectedItem.node.copy() as! SCNNode
+        node.position = SCNVector3(thirdColumn.x, thirdColumn.y, thirdColumn.z)
+        self.sceneView.scene.rootNode.addChildNode(node)
+    }
+    
     //CollectionView
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return listOfObjects.count
@@ -46,7 +56,7 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell:CollectionCell = collectionView.dequeueReusableCell(withReuseIdentifier: "CollectionCell", for: indexPath) as! CollectionCell
         let cellInfo:CellInfo = listOfObjects[indexPath.row]
-        cell.name.text = cellInfo.name
+        cell.name.text = cellInfo.name.capitalized
         cell.backgroundColor = cellInfo.backColor
         return cell
     }
@@ -55,12 +65,8 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("Called SCNode Instantiation")
-        //SCN Node instantiation
-        let node = listOfObjects[indexPath.row].node.copy() as! SCNNode
-        
-        node.position = SCNVector3(x: 0, y: 0, z: 0)
-        self.sceneView.scene.rootNode.addChildNode(node)
+        selectedItem = listOfObjects[indexPath.row]
+        showTempInfoInLabel(seconds: 4, message: "\(selectedItem.name.capitalized) Seleccionado")
     }
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: 150, height: 50)
@@ -68,7 +74,27 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     
     //ARSCNView
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        
+        guard anchor is ARPlaneAnchor else {return}
+        showTempInfoInLabel(seconds: 4, message: "Plano Detectado")
+    }
+
+    
+    func createLava(planeAnchor:ARPlaneAnchor) -> SCNNode {
+        let lavaNode = SCNNode(geometry: SCNPlane(width: CGFloat(planeAnchor.extent.x), height: CGFloat(planeAnchor.extent.z)))
+        lavaNode.position = SCNVector3(planeAnchor.center.x,planeAnchor.center.y,planeAnchor.center.z)
+        lavaNode.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "lava")
+        lavaNode.position = SCNVector3(0,0,0)
+        lavaNode.eulerAngles = SCNVector3(90.degreesToRadians,0,0)
+        lavaNode.geometry?.firstMaterial?.isDoubleSided = true
+        return lavaNode
+    }
+    func showTempInfoInLabel(seconds:Double,message:String) -> Void {
+        DispatchQueue.main.async {
+            self.planeDetectedLabel.text = message
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
+            self.planeDetectedLabel.text = ""
+        }
     }
 }
 
@@ -76,9 +102,18 @@ class CellInfo {
     var name:String
     var backColor:UIColor
     var node:SCNNode
-    init(name:String, backColor:UIColor, node:SCNNode) {
+    init(name:String, backColor:UIColor) {
         self.name = name
         self.backColor = backColor
-        self.node = node
+        self.node = SCNScene(named: "art.scnassets/\(name).scn")?.rootNode.childNode(withName: name, recursively: false) ?? SCNNode()
     }
+    init() {
+        name = ""
+        backColor = UIColor.black
+        node = SCNNode()
+    }
+}
+
+extension Int{
+    var degreesToRadians:Double{return Double(self) * .pi/180}
 }
