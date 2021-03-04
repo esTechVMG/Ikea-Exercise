@@ -29,10 +29,10 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         collectionView.delegate = self
         collectionView.dataSource = self
         sceneView.delegate = self
-        sceneView.debugOptions = [
+        /*sceneView.debugOptions = [
             .showWorldOrigin,
             .showFeaturePoints
-        ]
+        ]*/
         scnConfig.planeDetection = .horizontal
         sceneView.session.run(scnConfig)
         let tap:UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
