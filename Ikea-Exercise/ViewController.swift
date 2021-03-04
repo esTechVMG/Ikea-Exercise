@@ -35,8 +35,13 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         ]
         scnConfig.planeDetection = .horizontal
         sceneView.session.run(scnConfig)
-        //let tap:UIGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(hitTestResult:)))
-        
+        let tap:UIGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
+        sceneView.addGestureRecognizer(tap)
+    }
+    @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+        let results = self.sceneView.hitTest(gesture.location(in: gesture.view), types: ARHitTestResult.ResultType.featurePoint)
+            guard let result: ARHitTestResult = results.first else {return}
+            addItem(hitTestResult: result)
     }
     
     func addItem(hitTestResult: ARHitTestResult) -> Void {
