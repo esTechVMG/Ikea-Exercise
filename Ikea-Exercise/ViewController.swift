@@ -40,8 +40,8 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     }
     @objc func handleTap(_ gesture: UITapGestureRecognizer) {
         let results = self.sceneView.hitTest(gesture.location(in: gesture.view), types: ARHitTestResult.ResultType.featurePoint)
-            guard let result: ARHitTestResult = results.first else {return}
-            addItem(hitTestResult: result)
+        guard let result: ARHitTestResult = results.first else {return}
+        addItem(hitTestResult: result)
     }
     
     func addItem(hitTestResult: ARHitTestResult) -> Void {
@@ -50,6 +50,12 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         let thirdColumn = transform.columns.3
         let node = selectedItem.node.copy() as! SCNNode
         node.position = SCNVector3(thirdColumn.x, thirdColumn.y, thirdColumn.z)
+        
+        if selectedItem.name.lowercased() == "mesa"{
+            print("Table position workaround")
+            node.position = SCNVector3(node.position.x - 0.35 ,node.position.y,node.position.z - 0.35)
+        }
+        
         self.sceneView.scene.rootNode.addChildNode(node)
     }
     
@@ -82,7 +88,6 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         guard anchor is ARPlaneAnchor else {return}
         showTempInfoInLabel(seconds: 4, message: "Plano Detectado")
     }
-
     
     func createLava(planeAnchor:ARPlaneAnchor) -> SCNNode {
         let lavaNode = SCNNode(geometry: SCNPlane(width: CGFloat(planeAnchor.extent.x), height: CGFloat(planeAnchor.extent.z)))
