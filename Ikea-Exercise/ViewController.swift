@@ -35,17 +35,42 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         ]
         scnConfig.planeDetection = .horizontal
         sceneView.session.run(scnConfig)
-        let tap:UIGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
+        let tap:UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
+        let longPress:UILongPressGestureRecognizer = UILongPressGestureRecognizer(target: self,action: #selector(self.longPress(gestureReconizer:)))
         sceneView.addGestureRecognizer(tap)
+        sceneView.addGestureRecognizer(longPress)
     }
     @objc func handleTap(_ gesture: UITapGestureRecognizer) {
         let results = self.sceneView.hitTest(gesture.location(in: gesture.view), types: ARHitTestResult.ResultType.featurePoint)
-        guard let result: ARHitTestResult = results.first else {return}
+        guard let result:ARHitTestResult = results.first else {return}
         addItem(hitTestResult: result)
+    }
+    var touchedNode:SCNNode?
+    @objc func longPress(gestureReconizer: UILongPressGestureRecognizer) -> Void {
+        print("Long Press Detected")
+        if gestureReconizer.state == .began{
+            let location: CGPoint = gestureReconizer.location(in: sceneView)
+            let hits = self.sceneView.hitTest(location, options: nil)
+            if !hits.isEmpty{
+                let tappedNode = hits.first?.node
+                print("You longPressed \(tappedNode?.name ?? "UnknownNode in func longPress()")")
+                tappedNode?.runAction(rotation(time: 2))
+                touchedNode = tappedNode
+            }
+        }
+        if gestureReconizer.state == .ended{
+            guard let longPresedNode = touchedNode else {return}
+            longPresedNode.removeAllActions()
+        }
+    }
+    func rotation(time:TimeInterval) -> SCNAction{
+        let rotation = SCNAction.rotateBy(x: 0, y: CGFloat(360.degreesToRadians), z: 0, duration: time)
+        let foreverRotation = SCNAction.repeatForever(rotation)
+        return foreverRotation
     }
     
     func addItem(hitTestResult: ARHitTestResult) -> Void {
-        print("You Tapped")
+        print("Tap Detected")
         let transform = hitTestResult.worldTransform
         let thirdColumn = transform.columns.3
         let node = selectedItem.node.copy() as! SCNNode
